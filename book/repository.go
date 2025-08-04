@@ -4,13 +4,13 @@ import "context"
 
 /* Interfaces pequenas */
 
-/* Funções fazem data transformation. E devem ter apenas um propósito. O nome da função deve representar isso. Devemos testar isso */
-
 /* Interfaces abstraem comportamento e não coisas*/
 
 /* Não escrevemos interfaces para testes, mas sim para usuários (que utilizam a api/interface) */
 
 type Reader interface {
+	/* Funções fazem data transformation. E devem ter apenas um propósito. O nome da função deve representar isso. Devemos testar isso */
+	/* Funções tem como seu primeiro parametro um Context e retornam um error */
 	Select(ctx context.Context, id int64) (Book, error)
 	SelectAll(ctx context.Context) ([]Book, error)
 }

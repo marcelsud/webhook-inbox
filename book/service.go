@@ -12,8 +12,6 @@ import (
  * Para tipos internos (maps, slices) usar value semantics
  */
 
-/* Funções tem seu primeiro parametro um Context, retornam um error */
-
 type UseCase interface {
 	Create(ctx context.Context, title, author string, category Category) (Book, error)
 	List(ctx context.Context) ([]Book, error)

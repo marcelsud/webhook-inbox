@@ -17,7 +17,8 @@ import (
 const TIMEOUT = 30 * time.Second
 
 /* “a porta de entrada e saída da minha aplicação”
-* Porque a porta de entrada? É no arquivo main.go, que vai ser compilado para gerar o executável da aplicação, onde é feita toda a “amarração” dos demais pacotes.
+* Porque a porta de entrada? É no arquivo main.go, que vai ser compilado para gerar o executável da aplicação,
+* onde é feita toda a “amarração” dos demais pacotes.
 * É nele onde iniciamos as dependências, fazemos as configurações e a invocação dos pacotes que desempenham a lógica de negócio.
 
 * E porque ele é a porta de saída da aplicação?
@@ -25,7 +26,8 @@ const TIMEOUT = 30 * time.Second
  */
 
 /*
- * As importações devem ser feitas apenas em uma direção: para baixo. O aplicativo (api, cli) importa camadas de negócios, que importam a camada de armazenamento
+ * As importações devem ser feitas apenas em uma direção: para baixo. O aplicativo (api, cli) importa camadas de negócios,
+ * que importam a camada de armazenamento
  */
 
 func main() {

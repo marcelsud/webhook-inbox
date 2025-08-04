@@ -6,13 +6,16 @@ import (
 	"testing"
 
 	"github.com/eminetto/post-turso/book"
-	"github.com/eminetto/post-turso/book/mocks"
-	"github.com/stretchr/testify/assert"
+	"github.com/eminetto/post-turso/book/mocks" /* Gosto do https://github.com/vektra/mockery para gerar os mocks */
+	"github.com/stretchr/testify/assert"        /* Esse pacote não faz parte da stdlib mas é muito útil. Lembre-se: testes não influenciam no binário, então não tem problema */
 )
+
+/* Dica: use test helpers: https://eltonminetto.dev/post/2024-02-15-using-test-helpers/ */
 
 func TestCreate(t *testing.T) {
 	ctx := context.Background()
-
+	/* Usar t.Run para criar subtestes */
+	/* Isso ajuda a organizar os testes e facilita a identificação de falhas */
 	t.Run("success", func(t *testing.T) {
 		b := book.Book{
 			Title:    "test title",
