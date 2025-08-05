@@ -27,17 +27,9 @@ func (c Category) String() string {
 	return "Unknown"
 }
 
-/* Define how to transform a Category object into a JSON. Example of using the standard language interfaces
+/* Define como transformar uma Category em um objeto JSON
  * https://eltonminetto.dev/post/2022-06-07-using-go-interfaces/
  */
-
-// Define how to transform a Category object into a JSON
-func (c Category) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString(`"`)
-	buffer.WriteString(c.String())
-	buffer.WriteString(`"`)
-	return buffer.Bytes(), nil
-}
 
 /*
  * Sobre o receiver das funções ser ponteiro ou valor:
@@ -45,6 +37,13 @@ func (c Category) MarshalJSON() ([]byte, error) {
  * Usar valor é mais performático pq cada instância tem seu valor e não precisa alocar na heap,
  * reduzindo custo de GC
  */
+
+func (c Category) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString(`"`)
+	buffer.WriteString(c.String())
+	buffer.WriteString(`"`)
+	return buffer.Bytes(), nil
+}
 
 // Create a new category
 func NewCategory(s string) Category {

@@ -6,7 +6,7 @@ import (
 )
 
 /*
- * - Quando uma struct representa DADOS deveria usar sempre value semantics e não pointer (ex: Book) .
+ * Quando uma struct representa DADOS deveria usar sempre value semantics e não pointer (ex: Book) .
  * Se a struct representa uma API deveria ser pointer (ex: Service).
  * Para tipos primários (int, string) sempre value semantics
  * Para tipos internos (maps, slices) usar value semantics
