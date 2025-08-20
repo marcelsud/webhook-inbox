@@ -1,1 +1,1 @@
-# Post about The Go Way
+# Talk about The Go Way
