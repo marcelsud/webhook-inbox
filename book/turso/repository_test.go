@@ -1,3 +1,5 @@
+//go:build !integration
+
 package turso
 
 import (
@@ -11,6 +13,20 @@ import (
 	_ "github.com/glebarez/go-sqlite"
 	"github.com/stretchr/testify/assert"
 )
+
+/*
+Testes Unitários do Repository.
+
+Estes são testes rápidos que usam SQLite local em arquivo temporário.
+Executam por padrão: go test ./...
+Podem ser excluídos com: go test -tags=integration ./...
+
+Diferente dos testes de integração (repository_integration_test.go), esses:
+- Não dependem de containers ou serviços externos
+- Rodam localmente e rapidamente
+- Usam SQLite em arquivo, não em memória
+- Bons para feedback rápido durante desenvolvimento
+*/
 
 func TestRepository(t *testing.T) {
 	ctx := context.Background()
