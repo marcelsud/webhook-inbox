@@ -1,0 +1,44 @@
+# Webhook Routes Configuration
+# Maps route IDs to target URLs with delivery settings
+
+routes:
+  # FIFO example - guaranteed ordered delivery
+  - route_id: "user-events"
+    target_url: "https://echo.free.beeceptor.com/webhooks/users"
+    mode: "fifo"
+    max_retries: 3
+    retry_backoff: "pow(2, retried) * 1000"  # Exponential backoff: 1s, 2s, 4s, 8s
+    parallelism: 1                           # Must be 1 for FIFO
+    expected_status: 200                     # Accepted: 200, 201, or 202 (default: 202)
+    # Optional: Override global TTL settings (in hours)
+    # delivered_ttl_hours: 2                 # Keep delivered webhooks for 2 hours
+    # failed_ttl_hours: 48                   # Keep failed webhooks for 48 hours
+
+  # PubSub example - high throughput, no ordering guarantee
+  - route_id: "analytics-events"
+    target_url: "https://echo.free.beeceptor.com/webhooks/analytics"
+    mode: "pubsub"
+    max_retries: 3
+    retry_backoff: "pow(2, retried) * 1000"
+    parallelism: 5                           # Can be >1 for concurrent processing
+    expected_status: 200
+
+  # Another FIFO example for critical ordered events
+  - route_id: "order-events"
+    target_url: "https://echo.free.beeceptor.com/webhooks/orders"
+    mode: "fifo"
+    max_retries: 5
+    retry_backoff: "min(pow(2, retried) * 1000, 60000)"  # Cap at 60 seconds
+    parallelism: 1
+    expected_status: 200
+    delivered_ttl_hours: 24                  # Keep order webhooks longer for audit
+    failed_ttl_hours: 168                    # Keep failed orders for 7 days
+
+  # High-throughput logging with minimal retries
+  - route_id: "logs"
+    target_url: "https://echo.free.beeceptor.com/webhooks/logs"
+    mode: "pubsub"
+    max_retries: 1
+    retry_backoff: "1000"  # Fixed 1 second delay
+    parallelism: 10        # High parallelism for throughput
+    expected_status: 200

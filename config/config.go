@@ -6,82 +6,63 @@ import (
 	"github.com/spf13/viper"
 )
 
-/* Config é um pacote auxiliar. Poderia ser uma lib externa*/
-
+// Config holds all configuration for the webhook inbox system
 type Config struct {
-	Port             string `mapstructure:"PORT"`
-	DBName           string `mapstructure:"DBNAME"`
-	TursoDatabaseURL string `mapstructure:"TURSO_DATABASE_URL"`
-	TursoAuthToken   string `mapstructure:"TURSO_AUTH_TOKEN"`
+	Port string `mapstructure:"PORT"`
 
-	// PostgreSQL Configuration
-	PostgresHost               string `mapstructure:"POSTGRES_HOST"`
-	PostgresPort               string `mapstructure:"POSTGRES_PORT"`
-	PostgresDB                 string `mapstructure:"POSTGRES_DB"`
-	PostgresUser               string `mapstructure:"POSTGRES_USER"`
-	PostgresPassword           string `mapstructure:"POSTGRES_PASSWORD"`
-	PostgresSSLMode            string `mapstructure:"POSTGRES_SSLMODE"`
-	PostgresMaxOpenConns       int    `mapstructure:"POSTGRES_MAX_OPEN_CONNS"`
-	PostgresMaxIdleConns       int    `mapstructure:"POSTGRES_MAX_IDLE_CONNS"`
-	PostgresConnMaxLifeMinutes int    `mapstructure:"POSTGRES_CONN_MAX_LIFE_MINUTES"`
+	// Redis Configuration
+	RedisHost     string `mapstructure:"REDIS_HOST"`
+	RedisPort     string `mapstructure:"REDIS_PORT"`
+	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
+	RedisDB       int    `mapstructure:"REDIS_DB"`
+
+	// Webhook Configuration
+	RoutesFile               string `mapstructure:"ROUTES_FILE"`
+	WebhookDeliveredTTLHours int    `mapstructure:"WEBHOOK_DELIVERED_TTL_HOURS"`
+	WebhookFailedTTLHours    int    `mapstructure:"WEBHOOK_FAILED_TTL_HOURS"`
+
+	// Telemetry Configuration
+	TelemetryEnabled bool `mapstructure:"TELEMETRY_ENABLED"` // OpenTelemetry metrics export
 }
 
-// PostgresConnectionString retorna a connection string para PostgreSQL
-// SEGURANÇA: Para produção, considere usar autenticação IAM ou AWS Secrets Manager
-// em vez de armazenar credenciais em variáveis de ambiente em texto plano.
-func (c *Config) PostgresConnectionString() string {
-	return fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		c.PostgresHost, c.PostgresPort, c.PostgresUser,
-		c.PostgresPassword, c.PostgresDB, c.PostgresSSLMode,
-	)
+// RedisAddr returns the Redis address in format host:port
+func (c *Config) RedisAddr() string {
+	if c.RedisPort == "" {
+		return c.RedisHost + ":6379" // default Redis port
+	}
+	return c.RedisHost + ":" + c.RedisPort
 }
 
-// ValidatePostgres valida se todas as configurações obrigatórias do PostgreSQL estão presentes
-func (c *Config) ValidatePostgres() error {
-	if c.PostgresHost == "" {
-		return fmt.Errorf("POSTGRES_HOST é obrigatório")
-	}
-	if c.PostgresPort == "" {
-		return fmt.Errorf("POSTGRES_PORT é obrigatório")
-	}
-	if c.PostgresDB == "" {
-		return fmt.Errorf("POSTGRES_DB é obrigatório")
-	}
-	if c.PostgresUser == "" {
-		return fmt.Errorf("POSTGRES_USER é obrigatório")
-	}
-	if c.PostgresPassword == "" {
-		return fmt.Errorf("POSTGRES_PASSWORD é obrigatório")
-	}
-	if c.PostgresSSLMode == "" {
-		return fmt.Errorf("POSTGRES_SSLMODE é obrigatório (use 'disable' para desenvolvimento)")
+// ValidateRedis validates if Redis configuration is present
+func (c *Config) ValidateRedis() error {
+	if c.RedisHost == "" {
+		return fmt.Errorf("REDIS_HOST is required")
 	}
 	return nil
 }
 
-// GetPostgresMaxOpenConns retorna o máximo de conexões abertas ou o padrão (25)
-func (c *Config) GetPostgresMaxOpenConns() int {
-	if c.PostgresMaxOpenConns <= 0 {
-		return 25 // default
+// GetRoutesFile returns the routes file path or default
+func (c *Config) GetRoutesFile() string {
+	if c.RoutesFile == "" {
+		return "routes.yaml" // default
 	}
-	return c.PostgresMaxOpenConns
+	return c.RoutesFile
 }
 
-// GetPostgresMaxIdleConns retorna o máximo de conexões inativas ou o padrão (5)
-func (c *Config) GetPostgresMaxIdleConns() int {
-	if c.PostgresMaxIdleConns <= 0 {
-		return 5 // default
+// GetWebhookDeliveredTTLHours returns the TTL for delivered webhooks in hours (default: 1)
+func (c *Config) GetWebhookDeliveredTTLHours() int {
+	if c.WebhookDeliveredTTLHours <= 0 {
+		return 1 // default: 1 hour
 	}
-	return c.PostgresMaxIdleConns
+	return c.WebhookDeliveredTTLHours
 }
 
-// GetPostgresConnMaxLifeMinutes retorna a duração máxima em minutos ou o padrão (5)
-func (c *Config) GetPostgresConnMaxLifeMinutes() int {
-	if c.PostgresConnMaxLifeMinutes <= 0 {
-		return 5 // default: 5 minutes
+// GetWebhookFailedTTLHours returns the TTL for failed webhooks in hours (default: 24)
+func (c *Config) GetWebhookFailedTTLHours() int {
+	if c.WebhookFailedTTLHours <= 0 {
+		return 24 // default: 24 hours
 	}
-	return c.PostgresConnMaxLifeMinutes
+	return c.WebhookFailedTTLHours
 }
 
 func GetConfig() (*Config, error) {
