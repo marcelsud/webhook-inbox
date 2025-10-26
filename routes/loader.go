@@ -19,15 +19,17 @@ type Config struct {
 
 // RouteConfig represents a single route in the YAML file
 type RouteConfig struct {
-	RouteID           string `yaml:"route_id"`
-	TargetURL         string `yaml:"target_url"`
-	Mode              string `yaml:"mode"`
-	MaxRetries        int    `yaml:"max_retries"`
-	RetryBackoff      string `yaml:"retry_backoff"`
-	Parallelism       int    `yaml:"parallelism"`
-	ExpectedStatus    int    `yaml:"expected_status"`     // Default: 202
-	DeliveredTTLHours *int   `yaml:"delivered_ttl_hours"` // Optional: override global default
-	FailedTTLHours    *int   `yaml:"failed_ttl_hours"`    // Optional: override global default
+	RouteID           string   `yaml:"route_id"`
+	TargetURL         string   `yaml:"target_url"`
+	Mode              string   `yaml:"mode"`
+	MaxRetries        int      `yaml:"max_retries"`
+	RetryBackoff      string   `yaml:"retry_backoff"`
+	Parallelism       int      `yaml:"parallelism"`
+	ExpectedStatus    int      `yaml:"expected_status"`     // Default: 202
+	DeliveredTTLHours *int     `yaml:"delivered_ttl_hours"` // Optional: override global default
+	FailedTTLHours    *int     `yaml:"failed_ttl_hours"`    // Optional: override global default
+	SigningSecret     string   `yaml:"signing_secret"`      // Standard Webhooks signing secret
+	EventTypes        []string `yaml:"event_types"`         // Event type filters
 }
 
 // Loader holds the loaded routes
@@ -72,6 +74,8 @@ func (l *Loader) Load(filePath string) error {
 			ExpectedStatus:    expectedStatus,
 			DeliveredTTLHours: rc.DeliveredTTLHours,
 			FailedTTLHours:    rc.FailedTTLHours,
+			SigningSecret:     rc.SigningSecret,
+			EventTypes:        rc.EventTypes,
 		}
 
 		if err := route.Validate(); err != nil {

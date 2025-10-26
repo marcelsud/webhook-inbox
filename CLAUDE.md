@@ -125,6 +125,9 @@ The project follows a layered architecture with unidirectional dependencies flow
     - `webhooks.go`: Webhook endpoint handlers
     - `webhooks_handlers.go`: Handler implementations
 - **`config/`**: Configuration management (Viper)
+- **`webhook/signature/`**: Standard Webhooks signing and verification (HMAC-SHA256)
+- **`webhook/payload/`**: Standard Webhooks payload format and validation
+- **`metrics/`**: OpenTelemetry metrics collection and export
 
 ## Webhook Inbox Architecture
 
@@ -222,6 +225,108 @@ routes:
    - Updates retry_count in Redis
    - Marks as Failed after max_retries
    - ACKs successful deliveries
+   - Exponential backoff with jitter (±20%) to prevent thundering herd
+
+## Standard Webhooks Support
+
+**Status**: ✅ Fully Implemented (v1.0.0 spec compliance)
+
+Webhook Inbox implements the [Standard Webhooks](https://www.standardwebhooks.com) specification for secure, reliable webhook delivery. See [STANDARDWEBHOOKS.md](STANDARDWEBHOOKS.md) for complete documentation.
+
+### Payload Format (Required)
+
+All webhooks **must** use the Standard Webhooks payload format:
+
+```json
+{
+  "type": "user.created",
+  "timestamp": "2024-01-01T12:00:00.123456789Z",
+  "data": {
+    "user_id": "123",
+    "email": "user@example.com"
+  }
+}
+```
+
+- **`type`**: Hierarchical event type (e.g., `user.created`, `order.payment.succeeded`)
+- **`timestamp`**: ISO 8601 formatted timestamp
+- **`data`**: Event payload (valid JSON)
+
+### Webhook Headers (Automatic)
+
+Workers automatically add Standard Webhooks headers:
+
+```
+webhook-id: msg_01HQZX...           # ULID identifier
+webhook-timestamp: 1674087231        # Unix timestamp (seconds)
+webhook-signature: v1,K5oZfz...      # HMAC-SHA256 signature (if configured)
+```
+
+### Route Configuration (Standard Webhooks)
+
+```yaml
+routes:
+  - route_id: "user-events"
+    target_url: "https://app.com/webhooks/users"
+    mode: "fifo"
+    max_retries: 3
+    retry_backoff: "pow(2, retried) * 1000"
+    parallelism: 1
+
+    # Standard Webhooks: Signing secret (optional)
+    signing_secret: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
+
+    # Standard Webhooks: Event type filtering (optional)
+    event_types:
+      - "user.created"       # Exact match
+      - "user.updated"       # Exact match
+      - "order.*"            # Wildcard: matches order.created, order.paid, etc.
+```
+
+### Signature Verification (Symmetric HMAC-SHA256)
+
+**Signing Secret Format:**
+- Prefix: `whsec_`
+- Size: 24-64 bytes (base64 encoded)
+- Algorithm: HMAC-SHA256
+
+**Signed Content:**
+```
+{webhook-id}.{webhook-timestamp}.{raw_body}
+```
+
+**Consumer Implementation:**
+See [STANDARDWEBHOOKS.md](STANDARDWEBHOOKS.md#consumer-implementation-guide) for complete verification examples.
+
+### Event Type Filtering
+
+- Empty `event_types`: Accept all events
+- Exact match: `user.created` → only `user.created`
+- Wildcard: `user.*` → `user.created`, `user.updated`, `user.deleted`, etc.
+- Events not matching filter are skipped (acknowledged without delivery)
+
+### HTTP Status Code Handling
+
+Following Standard Webhooks spec:
+
+- **2xx**: Success
+- **410 Gone**: Consumer no longer interested (mark failed, don't retry)
+- **429/502/504**: Server under load (retry with throttling)
+- **3xx**: Redirect (treat as failure - update URL instead)
+- **Other**: Failure (retry with backoff)
+
+### Security Features
+
+1. **Constant-time signature verification** (prevents timing attacks)
+2. **Timestamp validation** (prevents replay attacks)
+3. **Idempotency via webhook-id** (prevents duplicate processing)
+4. **Secret rotation support** (multiple signatures in header)
+
+### Future Enhancements
+
+- ⏳ **Asymmetric Signatures** (ed25519, v1a)
+- ⏳ **SSRF Protection** (URL filtering, proxy support)
+- ⏳ **Endpoint Auto-Disable** (on 410 Gone responses)
 
 ### Configuration (.env)
 

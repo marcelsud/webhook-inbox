@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/marcelsud/webhook-inbox/routes"
 	"github.com/marcelsud/webhook-inbox/webhook"
+	"github.com/marcelsud/webhook-inbox/webhook/payload"
 )
 
 /* HTTP layer DTOs for webhook API
@@ -61,6 +62,12 @@ func postWebhook(webhookService webhook.UseCase, routeLoader *routes.Loader) htt
 			return
 		}
 		defer r.Body.Close()
+
+		// Validate Standard Webhooks payload format
+		if _, err := payload.Parse(body); err != nil {
+			http.Error(w, fmt.Sprintf("invalid payload format: %v (expected Standard Webhooks format with type, timestamp, and data)", err), http.StatusBadRequest)
+			return
+		}
 
 		// Extract headers (optionally filter to only forward certain headers)
 		headers := make(map[string]string)
